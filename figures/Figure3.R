@@ -2,13 +2,17 @@
 # Author: Elizabeth Hutchins
 # Date: April 28th, 2020
 
-#Purpose: generate figure 3 for technical paper
+#Purpose: generate figure 3
 
 #Imports:
-# megaTable #metadata with plate info
+# metadata
+# normalized counts
+# ensembl ID to gene name table
+# variance partition output
+# t-SNE output
 
 #Exports:
-# figure 3 for scientific data paper
+# figure 3
 
 ## load libraries  ----------------------------------------------------------------------------------------------
 library(tidyverse) #42; base for data/table manipulation
@@ -16,7 +20,7 @@ library(ggpubr) #adds some visuals to ggplot, ggaggregate makes publication pane
 library(variancePartition) #package for examining variance
 library(edgeR) #for count normalization
 library(devtools) #load R scripts from github
-
+library(plot3D) #3D plots
 source_gist("c579c4ddc06fd2ceb121e690dd9df186") #color palettes
 
 #load gene annotations ----------------------------------------------------------------------------------------------
@@ -56,15 +60,31 @@ meta$SEX[meta$QCflagIR3 == "fail"] <- "failed QC"
 
 meta$SEX <- factor(meta$SEX, levels = c("Female", "Male", "HC Pool", "PD Pool", "failed QC"))
 
-PCA.bySex <- ggplot(meta, aes(x = PC1, y = PC2, color = SEX)) +
+sample.PCA <- ggplot(meta, aes(x = PC1, y = PC2, color = SEX)) +
   geom_point(alpha = 0.6) +
-  theme_bw(base_size = 18) +
+  theme_bw(base_size = 26) +
   xlab("PC1: 25.4% variance") +
   ylab("PC2: 16.7% variance") +
   scale_color_manual(values = c(complementary[c(4,1,3)], "#222222", "gray70")) +
   theme(legend.position = "bottom", legend.title = element_blank())
-PCA.bySex
+sample.PCA
 
+
+#sex check --------------------------------------------------------------------------------------------
+tsne.out <- read_csv("data/sexCheck_tsne_output.csv")
+
+
+tsne_p <- ggplot(tsne.out) +
+  geom_point(aes(x = x, y = y, fill = Reported_Sex),
+             shape = 21,
+             size = 2,
+             color = "black") +
+  scale_fill_manual(values = c("#FC4E07", "#00AFBB")) +
+  theme_bw(base_size = 26) +
+  theme(legend.position = "bottom", legend.title = element_blank()) +
+  xlab("t-SNE dimension 1") +
+  ylab("t-SNE dimension 2")
+tsne_p
 
 # variance partition --------------------------------------------------------------------------------------------
 colPal <- getPalette(14, "multi")
@@ -77,7 +97,7 @@ vp <- read_csv("data/variancePartition_output.csv")
 names(colPal) <- c(names(vp)[-c(1,17:18)])
 
 vpPlot <- plotVarPart(vp[,-c(1, 17,18)], col = colPal) +
-  theme_bw(base_size = 26) +
+  theme_bw(base_size = 32) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
         legend.position = "bottom",
         legend.title = element_blank())
@@ -137,27 +157,24 @@ poolPCA <- ggplot(data=d, aes_string(x = "PC1", y = "PC2", color = "PoolAssign",
   geom_point(size = 3) + 
   xlab(paste0("PC1: ", round(percentVar[1] * 100),"% variance")) +
   ylab(paste0("PC2: ", round(percentVar[2] * 100),"% variance")) +
-  #coord_fixed() +
-  #xlim(c(-60, 60)) +
   scale_colour_manual(values = poolPalette) +
-  theme_bw(base_size = 18) +
+  theme_bw(base_size = 26) +
   theme(legend.position = "bottom", legend.title = element_blank()) +
   geom_label() +
   stat_ellipse()
 poolPCA
 
 # final figure --------------------------------------------------------------------------------------------
-ggarrange(ggarrange(PCA.bySex, poolPCA,
-                    labels = c("a", "b"),
-                    font.label = list(size = 22),
-                    ncol = 2, nrow = 1),
+ggarrange(ggarrange(tsne_p, sample.PCA, poolPCA, 
+                    labels = c("a", "b", "c"),
+                    font.label = list(size = 28),
+                    ncol = 3, nrow = 1),
           vpPlot,
-          labels = c("", "c"),
-          font.label = list(size = 22),
-          ncol = 1, nrow = 2)
+          labels = c("", "d"),
+          font.label = list(size = 28),
+          ncol = 1, nrow = 2,
+          heights = c(3,4))
 
-ggsave("scientificData_paper/finalFigures/Figure3.png", width = 16, height = 16, dpi = 600)
-ggsave("scientificData_paper/finalFigures/Figure3.eps", width = 16, height = 16, dpi = 600)
-ggsave("scientificData_paper/finalFigures/Figure3.pdf", width = 16, height = 16, dpi = 600)
+ggsave("Figure3.png", width = 24, height = 16, dpi = 600)
 
 
