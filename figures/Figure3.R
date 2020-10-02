@@ -20,7 +20,7 @@ library(ggpubr) #adds some visuals to ggplot, ggaggregate makes publication pane
 library(variancePartition) #package for examining variance
 library(edgeR) #for count normalization
 library(devtools) #load R scripts from github
-library(plot3D) #3D plots
+
 source_gist("c579c4ddc06fd2ceb121e690dd9df186") #color palettes
 
 #load gene annotations ----------------------------------------------------------------------------------------------
@@ -31,7 +31,6 @@ genes.anno <- unique(genes.anno)
 
 ## sample metadata  ----------------------------------------------------------------------------------------------
 meta <- read_csv("data/megaMetaTable.csv")
-meta <- subset(meta, QCflagIR3 != "remove")
 dim(meta)
 
 myPalette <- getPalette(21, "multi")
